@@ -1,0 +1,24 @@
+version: "3.8"
+
+services:
+  mhh1-signin:
+    build: .
+    container_name: mhh1-signin
+    restart: "no"
+    volumes:
+      - ./config.json:/app/config.json:ro
+      - ./logs:/app/logs
+    environment:
+      - TZ=Asia/Shanghai
+
+  # 定时签到服务 (每天 8:00)
+  mhh1-signin-scheduler:
+    build: .
+    container_name: mhh1-signin-scheduler
+    restart: unless-stopped
+    entrypoint: ["python3", "scheduler.py", "08:00"]
+    volumes:
+      - ./config.json:/app/config.json:ro
+      - ./logs:/app/logs
+    environment:
+      - TZ=Asia/Shanghai

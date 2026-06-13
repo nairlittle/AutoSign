@@ -1,0 +1,10 @@
+[Unit]
+Description=mhh1.com Auto Sign-in Timer
+
+[Timer]
+OnCalendar=*-*-* 08:00:00
+RandomizedDelaySec=1800
+Persistent=true
+
+[Install]
+WantedBy=timers.target

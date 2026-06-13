@@ -1,0 +1,19 @@
+[Unit]
+Description=mhh1.com Auto Sign-in Service
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+User=root
+WorkingDirectory=/opt/mhh1-signin
+ExecStart=/opt/mhh1-signin/venv/bin/python3 /opt/mhh1-signin/signin.py
+StandardOutput=append:/opt/mhh1-signin/logs/systemd.log
+StandardError=append:/opt/mhh1-signin/logs/systemd.log
+
+# 失败后重试
+Restart=on-failure
+RestartSec=60
+
+[Install]
+WantedBy=multi-user.target

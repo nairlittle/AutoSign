@@ -1,0 +1,8 @@
+{
+    "username": "你的邮箱",
+    "password": "你的密码",
+    "site_url": "https://www.mhh1.com",
+    "sign_in_url": "https://www.mhh1.com/sign",
+    "retry_count": 5,
+    "retry_delay": 3
+}
