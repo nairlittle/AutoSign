@@ -29,5 +29,6 @@ analyze_*.py
 test_*.py
 frontend.js
 
-# Config (contains credentials)
+# Config and session (contains credentials)
 config.json
+cookies.json
