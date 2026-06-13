@@ -72,14 +72,16 @@ def load_cookies() -> list:
 async def check_login_status(page) -> bool:
     """检查当前页面是否已登录"""
     result = await page.evaluate('''() => {
-        // 检查页面上是否有用户头像或退出按钮（已登录标志）
         const avatar = document.querySelector('.inn-sign__avatar')
                     || document.querySelector('.inn-user__avatar')
                     || document.querySelector('[class*="avatar"]');
-        const logoutBtn = document.querySelector('[href*="logout"]')
-                       || document.querySelector('text=退出');
 
-        // 检查全局变量
+        // 遍历所有链接查找 logout
+        let hasLogout = false;
+        document.querySelectorAll('a').forEach(a => {
+            if (a.href && a.href.includes('logout')) hasLogout = true;
+        });
+
         let isLoggedIn = false;
         try {
             if (window.K && window.K.isLoggedIn) isLoggedIn = true;
@@ -87,7 +89,7 @@ async def check_login_status(page) -> bool:
 
         return {
             hasAvatar: !!avatar,
-            hasLogout: !!logoutBtn,
+            hasLogout: hasLogout,
             isLoggedIn: isLoggedIn
         };
     }''')
