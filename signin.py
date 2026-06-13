@@ -194,11 +194,16 @@ async def do_sign_in(page) -> bool:
             if result and "ERROR" not in result:
                 try:
                     data = json.loads(result)
-                    if data.get("code") == 0 or data.get("success"):
+                    if isinstance(data, dict):
+                        if data.get("code") == 0 or data.get("success"):
+                            logger.info("AJAX 签到成功！")
+                            return True
+                    elif isinstance(data, int) and data == 0:
                         logger.info("AJAX 签到成功！")
                         return True
                 except json.JSONDecodeError:
-                    if "成功" in result:
+                    if "成功" in result or result.strip() == "0":
+                        logger.info("AJAX 签到成功！")
                         return True
         except Exception as e:
             logger.warning(f"AJAX [{action}] 异常: {e}")
@@ -245,13 +250,39 @@ async def do_login(page, config, max_retries, retry_delay) -> bool:
         await page.locator('input[name="captcha"]').fill(captcha_text)
         await page.wait_for_timeout(500)
 
-        login_result = await page.evaluate(JS_SUBMIT_LOGIN, {
-            "email": config["username"],
-            "pwd": config["password"],
-            "captcha": captcha_text,
-        })
+        # Hook fetch 捕获响应，然后点击按钮提交
+        await page.evaluate('''() => {
+            window.__loginResponse = null;
+            const origFetch = window.fetch;
+            window.fetch = function(...args) {
+                const promise = origFetch.apply(this, args);
+                promise.then(async resp => {
+                    if (resp.url.includes('admin-ajax')) {
+                        try { window.__loginResponse = await resp.clone().text(); } catch(e) {}
+                    }
+                }).catch(() => {});
+                return promise;
+            };
+            window.__origFetch = origFetch;
+        }''')
 
-        logger.info(f"登录响应: {login_result[:300]}")
+        submit = page.locator('#inn-sign__dialog__fm .poi-dialog__footer__btn')
+        try:
+            async with page.expect_navigation(timeout=10000):
+                await submit.first.click(force=True)
+            # 页面跳转了，说明登录成功
+            logger.info("登录成功！(页面已跳转)")
+            login_result = '{"code": 0}'
+        except Exception:
+            # 没有跳转，检查 fetch 响应
+            login_result = await page.evaluate('() => window.__loginResponse || JSON.stringify({code: -1, msg: "未获取到响应"})')
+            logger.info(f"登录响应: {login_result[:300]}")
+
+        # 恢复 fetch
+        try:
+            await page.evaluate('() => { if (window.__origFetch) window.fetch = window.__origFetch; }')
+        except Exception:
+            pass
 
         if login_result:
             try:
